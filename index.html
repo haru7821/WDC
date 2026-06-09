@@ -266,46 +266,38 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 <body>
 
 <!-- 관리자 로그인 모달 -->
-<div id="admin-modal" style="display:none;position:fixed;inset:0;z-index:200;
-  background:rgba(0,0,0,.45);backdrop-filter:blur(4px);
-  align-items:center;justify-content:center;padding:20px">
-  <div style="background:var(--white);border-radius:14px;padding:28px 24px;
-              max-width:320px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);
-              border-top:4px solid var(--plum);animation:modal-in .2s ease">
+<div id="admin-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:14px;padding:28px 24px;
+              max-width:300px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);
+              border-top:4px solid #72256B;position:relative">
     <div style="text-align:center;margin-bottom:18px">
       <div style="font-size:32px;margin-bottom:8px">🔐</div>
-      <div style="font-family:'Black Han Sans',sans-serif;font-size:18px;color:var(--plum-d)">관리자 로그인</div>
+      <div style="font-family:'Black Han Sans',sans-serif;font-size:18px;color:#5a1a54">관리자 로그인</div>
     </div>
     <input type="password" id="admin-pw-in"
       style="width:100%;padding:13px 15px;font-size:18px;text-align:center;
-             font-family:'IBM Plex Mono',monospace;letter-spacing:4px;
-             background:var(--cream);border:2px solid var(--border-s);
-             border-radius:9px;color:var(--text);transition:all .2s;margin-bottom:8px"
-      placeholder="비밀번호 입력"
-      maxlength="20"
-      onkeydown="if(event.key==='Enter')checkAdminPw()"
-      oninput="document.getElementById('pw-err').style.display='none'">
+             font-family:'IBM Plex Mono',monospace;letter-spacing:6px;
+             background:#FFFAEB;border:2px solid rgba(0,0,0,.18);
+             border-radius:9px;color:#1C1C1E;margin-bottom:8px;display:block"
+      placeholder="● ● ● ● ● ●"
+      maxlength="20">
     <p id="pw-err" style="font-size:12px;color:#C0392B;text-align:center;margin-bottom:10px;display:none">
       ❌ 비밀번호가 틀렸습니다
     </p>
-    <button onclick="checkAdminPw()"
-      style="width:100%;padding:13px;background:var(--plum);color:#fff;border:none;
+    <button id="pw-confirm-btn"
+      style="width:100%;padding:13px;background:#72256B;color:#fff;border:none;
              border-radius:9px;font-family:'Black Han Sans',sans-serif;font-size:16px;
-             letter-spacing:1.5px;cursor:pointer;margin-bottom:10px">
+             letter-spacing:1.5px;cursor:pointer;margin-bottom:10px;display:block">
       확인
     </button>
-    <button onclick="closeAdminModal()"
-      style="width:100%;padding:10px;background:transparent;color:var(--lo);border:none;
-             font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">
+    <button id="pw-cancel-btn"
+      style="width:100%;padding:10px;background:transparent;color:#A1A1AA;border:none;
+             font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;display:block">
       취소
     </button>
   </div>
 </div>
-<style>
-@keyframes modal-in{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
-#admin-modal.on{display:flex}
-#admin-pw-in:focus{outline:none;border-color:var(--plum);box-shadow:0 0 0 3px var(--plum-lt)}
-</style>
 
 <!-- 로딩 -->
 <div id="pg-loading">
@@ -330,7 +322,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
         <span id="conn-txt">연결 중</span>
       </div>
       <div class="cnt-chip">참가자 <strong id="hdr-cnt">0</strong>명</div>
-      <button id="admin-btn" onclick="openAdminLogin()"
+      <button id="admin-btn"
         style="padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:.5px;
                background:var(--cream);border:1.5px solid var(--border-s);border-radius:6px;
                color:var(--mid);cursor:pointer;transition:all .2s;font-family:'IBM Plex Mono',monospace">
@@ -547,38 +539,51 @@ let winners = [];
 let kScore = 0, rScore = 0;
 let currentPickedIdx = [];
 let IS_ADMIN = new URLSearchParams(location.search).has('admin');
-
-// ── 관리자 모달 ──
-function openAdminLogin() {
-  if (IS_ADMIN) { switchTab(2); return; }
-  document.getElementById('admin-pw-in').value = '';
-  document.getElementById('pw-err').style.display = 'none';
-  document.getElementById('admin-modal').style.display = 'flex';
-  setTimeout(() => document.getElementById('admin-pw-in').focus(), 100);
-}
-
-function closeAdminModal() {
-  document.getElementById('admin-modal').style.display = 'none';
-}
-
-function checkAdminPw() {
-  const pw = document.getElementById('admin-pw-in').value;
-  if (pw === '123456') {
-    IS_ADMIN = true;
-    document.getElementById('admin-tab').style.display = '';
-    document.getElementById('admin-btn').style.background = 'var(--plum)';
-    document.getElementById('admin-btn').style.color = '#fff';
-    document.getElementById('admin-btn').style.borderColor = 'var(--plum)';
-    document.getElementById('admin-btn').textContent = '🔓 ADMIN';
-    closeAdminModal();
-    switchTab(2);
-  } else {
-    document.getElementById('pw-err').style.display = 'block';
-    document.getElementById('admin-pw-in').focus();
-    document.getElementById('admin-pw-in').select();
-  }
-}
 let filterScore = null;
+
+// ── 관리자 모달 이벤트 (DOMContentLoaded 후 연결) ──
+window.addEventListener('DOMContentLoaded', function() {
+  const adminBtn    = document.getElementById('admin-btn');
+  const modal       = document.getElementById('admin-modal');
+  const pwIn        = document.getElementById('admin-pw-in');
+  const pwErr       = document.getElementById('pw-err');
+  const confirmBtn  = document.getElementById('pw-confirm-btn');
+  const cancelBtn   = document.getElementById('pw-cancel-btn');
+
+  function openModal() {
+    if (IS_ADMIN) { switchTab(2); return; }
+    pwIn.value = '';
+    pwErr.style.display = 'none';
+    modal.style.display = 'flex';
+    setTimeout(() => pwIn.focus(), 50);
+  }
+
+  function closeModal() {
+    modal.style.display = 'none';
+  }
+
+  function checkPw() {
+    if (pwIn.value === '123456') {
+      IS_ADMIN = true;
+      document.getElementById('admin-tab').style.display = '';
+      adminBtn.style.cssText += ';background:#72256B !important;color:#fff !important;border-color:#72256B !important';
+      adminBtn.textContent = '🔓 ADMIN';
+      closeModal();
+      switchTab(2);
+    } else {
+      pwErr.style.display = 'block';
+      pwIn.value = '';
+      pwIn.focus();
+    }
+  }
+
+  adminBtn.addEventListener('click', openModal);
+  confirmBtn.addEventListener('click', checkPw);
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+  pwIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') checkPw(); });
+  pwIn.addEventListener('input', function() { pwErr.style.display = 'none'; });
+});
 
 // ── 부트 ──
 function loadScript(src) {
@@ -991,6 +996,7 @@ function exportCSV() {
 
 function clearAll() {
   db.ref('participants').remove();
+  db.ref('finalResult').remove();
   resetLottery();
 }
 
