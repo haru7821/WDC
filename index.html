@@ -550,16 +550,15 @@ let IS_ADMIN = new URLSearchParams(location.search).has('admin');
 
 // ── 관리자 모달 ──
 function openAdminLogin() {
-  // 이미 관리자면 탭으로 바로 이동
   if (IS_ADMIN) { switchTab(2); return; }
   document.getElementById('admin-pw-in').value = '';
   document.getElementById('pw-err').style.display = 'none';
-  document.getElementById('admin-modal').classList.add('on');
+  document.getElementById('admin-modal').style.display = 'flex';
   setTimeout(() => document.getElementById('admin-pw-in').focus(), 100);
 }
 
 function closeAdminModal() {
-  document.getElementById('admin-modal').classList.remove('on');
+  document.getElementById('admin-modal').style.display = 'none';
 }
 
 function checkAdminPw() {
