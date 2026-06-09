@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ 대한민국 vs 남아공 스코어 예측</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --plum:     #72256B;
+  --plum-d:   #5a1a54;
+  --plum-lt:  rgba(114,37,107,0.09);
+  --pine:     #105742;
+  --pine-d:   #0c4233;
+  --pine-lt:  rgba(16,87,66,0.10);
+  --cream:    #FFFAEB;
+  --euca:     #6CA07A;
+  --amber:    #D4700A;
+  --amber-lt: rgba(212,112,10,0.12);
+  --white:    #ffffff;
+  --border:   rgba(0,0,0,0.09);
+  --border-s: rgba(0,0,0,0.18);
+  --text:     #1C1C1E;
+  --mid:      #52525B;
+  --lo:       #A1A1AA;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 50% 40% at 10% 30%,rgba(114,37,107,.07) 0%,transparent 60%),
+             radial-gradient(ellipse 50% 40% at 90% 70%,rgba(16,87,66,.07) 0%,transparent 60%)}
+.page{display:none;position:relative;z-index:1;min-height:100vh}
+.page.on{display:flex;flex-direction:column}
+
+/* ── 공통 컴포넌트 ── */
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:9px;
+  font-family:'Black Han Sans',sans-serif;font-size:17px;letter-spacing:1.5px;
+  cursor:pointer;transition:all .18s}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:not(:disabled):hover{filter:brightness(.92)}
+.btn:not(:disabled):active{transform:scale(.98)}
+.btn-plum {background:var(--plum); color:#fff;box-shadow:0 3px 14px rgba(114,37,107,.28)}
+.btn-pine {background:var(--pine); color:#fff;box-shadow:0 3px 14px rgba(16,87,66,.28)}
+.btn-amber{background:var(--amber);color:#fff;box-shadow:0 3px 14px rgba(212,112,10,.28)}
+.btn-ghost{background:transparent;border:1.5px solid var(--border-s);color:var(--mid);
+  font-family:'Noto Sans KR',sans-serif;font-size:13px;letter-spacing:0;padding:9px 16px;width:auto}
+.btn-ghost:hover{border-color:var(--plum);color:var(--plum)}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;
+  padding:24px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.card-title{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:var(--plum);margin-bottom:16px;
+  display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:inline-block;width:4px;height:13px;
+  background:var(--plum);border-radius:2px}
+.err{font-size:12px;color:#C0392B;margin-top:8px;display:none}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--lo);flex-shrink:0}
+.dot.ok{background:var(--euca);animation:blink 2s ease infinite}
+.dot.bad{background:#C0392B}
+@keyframes blink{50%{opacity:.4}}
+.sp{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
+  vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.notice{padding:12px 16px;border-radius:8px;font-size:13px;line-height:1.7;
+  display:flex;align-items:flex-start;gap:8px;margin-bottom:14px}
+.notice.info {background:var(--pine-lt);border:1px solid rgba(16,87,66,.25);color:var(--pine-d)}
+.notice.warn {background:var(--amber-lt);border:1px solid rgba(212,112,10,.3);color:#a85800}
+.notice.err  {background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.25);color:#C0392B}
+
+/* ── 설정 화면 ── */
+#pg-setup{align-items:center;justify-content:center;padding:24px 16px}
+.setup-box{background:var(--white);border:1px solid var(--border-s);
+  border-top:4px solid var(--plum);border-radius:14px;
+  padding:32px 28px;max-width:520px;width:100%;
+  box-shadow:0 12px 40px rgba(114,37,107,.10)}
+.setup-logo{text-align:center;margin-bottom:22px}
+.setup-logo .em{font-size:38px;margin-bottom:8px}
+.setup-logo h1{font-family:'Black Han Sans',sans-serif;font-size:22px;
+  color:var(--plum-d);letter-spacing:-0.5px}
+.setup-logo p{font-size:12px;color:var(--lo);margin-top:4px;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:1px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--mid);
+  margin-bottom:6px;letter-spacing:.5px}
+.field input{width:100%;padding:12px 14px;background:var(--cream);
+  border:1.5px solid var(--border-s);border-radius:8px;color:var(--text);
+  font-size:15px;font-family:'Noto Sans KR',sans-serif;transition:all .2s}
+.field input:focus{outline:none;border-color:var(--plum);
+  box-shadow:0 0 0 3px var(--plum-lt);background:var(--white)}
+.guide-box{background:var(--cream);border-radius:10px;padding:18px 20px;
+  margin:18px 0;border:1px solid var(--border)}
+.guide-box h3{font-size:13px;font-weight:700;color:var(--plum);margin-bottom:12px}
+.step{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.step:last-child{margin-bottom:0}
+.sn{min-width:22px;height:22px;background:var(--plum);color:#fff;border-radius:50%;
+  font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px}
+.step p{font-size:13px;color:var(--mid);line-height:1.7}
+.step p b{color:var(--text)}
+.step p code{font-family:'IBM Plex Mono',monospace;font-size:12px;
+  color:var(--plum-d);background:var(--plum-lt);padding:1px 6px;border-radius:3px}
+.step p a{color:var(--plum);font-weight:600;text-decoration:none}
+.img-hint{background:rgba(114,37,107,.04);border:1px dashed rgba(114,37,107,.2);
+  border-radius:6px;padding:8px 12px;margin-top:6px;
+  font-size:12px;color:var(--plum-d);line-height:1.6}
+
+/* ── 참가자 화면 ── */
+#pg-part{align-items:center;justify-content:flex-start;padding:0 0 60px}
+.p-hdr{width:100%;background:var(--white);border-bottom:1px solid var(--border);
+  padding:14px 18px;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.match-pill{display:flex;align-items:center;font-size:12px;font-weight:700;
+  border:1px solid var(--border-s);border-radius:6px;overflow:hidden}
+.match-pill .t{padding:5px 12px;color:#fff}
+.match-pill .t.k{background:var(--plum)}
+.match-pill .t.r{background:var(--pine)}
+.match-pill .vs{padding:5px 8px;background:var(--cream);color:var(--amber);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+  border-left:1px solid var(--border);border-right:1px solid var(--border)}
+.conn-row{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--lo)}
+.count-chip{font-size:13px;color:var(--mid);background:var(--cream);
+  border:1px solid var(--border);padding:5px 12px;border-radius:20px}
+.count-chip strong{color:var(--plum)}
+.p-body{width:100%;max-width:480px;padding:24px 18px 0}
+
+/* score input */
+.score-grid{display:grid;grid-template-columns:1fr 32px 1fr;
+  align-items:center;gap:10px;margin-bottom:26px}
+.score-team{text-align:center}
+.s-label{font-size:12px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;margin-bottom:8px}
+.s-label.k{color:var(--plum)}.s-label.r{color:var(--pine)}
+.s-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.s-num{width:90px;height:90px;font-family:'IBM Plex Mono',monospace;
+  font-size:clamp(32px,8vw,46px);font-weight:700;text-align:center;
+  background:var(--white);border:2px solid var(--border-s);border-radius:12px;
+  display:flex;align-items:center;justify-content:center;color:var(--text);
+  margin:0 auto}
+.sc{width:38px;height:38px;border:1.5px solid var(--border-s);background:var(--white);
+  border-radius:8px;font-size:20px;font-weight:300;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--mid);transition:all .15s}
+.sc:active{transform:scale(.88)}
+.sc.k:hover{border-color:var(--plum);color:var(--plum);background:var(--plum-lt)}
+.sc.r:hover{border-color:var(--pine);color:var(--pine);background:var(--pine-lt)}
+.vs-sep{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;
+  color:var(--lo);text-align:center}
+
+/* name input */
+.name-lbl{font-size:13px;font-weight:600;color:var(--mid);margin-bottom:8px;display:block}
+.name-in{width:100%;padding:14px 16px;font-size:16px;
+  font-family:'Noto Sans KR',sans-serif;background:var(--white);
+  border:2px solid var(--border-s);border-radius:10px;color:var(--text);transition:all .2s}
+.name-in:focus{outline:none;border-color:var(--plum);box-shadow:0 0 0 3px var(--plum-lt)}
+.name-wrap{margin-bottom:18px}
+
+/* 참가자 목록 (참가자 화면 하단) */
+.part-list-wrap{margin-top:24px}
+.part-list-title{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:var(--plum);margin-bottom:12px;
+  display:flex;align-items:center;gap:8px}
+.part-list-title::before{content:'';display:inline-block;width:4px;height:13px;
+  background:var(--plum);border-radius:2px}
+.part-list{display:flex;flex-direction:column;gap:6px;max-height:320px;
+  overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.1) transparent}
+.part-row{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:var(--white);border:1px solid var(--border);border-radius:8px;
+  animation:fadein .3s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.pr-num{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--lo);width:22px;flex-shrink:0}
+.pr-name{flex:1;font-weight:700;font-size:14px}
+.pr-score{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700}
+.pr-score .sk{color:var(--plum)}.pr-score .sr{color:var(--pine)}.pr-score .ss{color:var(--lo)}
+.part-empty{text-align:center;padding:28px;color:var(--lo);font-size:13px}
+.part-empty span{display:block;font-size:28px;margin-bottom:8px}
+
+/* ── 완료 화면 ── */
+#pg-done{align-items:center;justify-content:center;padding:24px 20px;text-align:center}
+.done-card{background:var(--white);border:1px solid var(--border);
+  border-top:4px solid var(--euca);border-radius:14px;padding:36px 28px;
+  max-width:380px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.07)}
+.done-icon{font-size:52px;margin-bottom:14px}
+.done-card h2{font-family:'Black Han Sans',sans-serif;font-size:26px;
+  color:var(--pine-d);margin-bottom:8px}
+.done-card p{font-size:13px;color:var(--mid);line-height:1.8;margin-bottom:18px}
+.my-pick{display:flex;align-items:center;justify-content:center;gap:14px;
+  padding:14px 20px;background:var(--cream);border-radius:10px;
+  border:1px solid var(--border);margin-bottom:16px}
+.mp-sc{font-family:'IBM Plex Mono',monospace;font-size:38px;font-weight:700;line-height:1}
+.mp-sc.k{color:var(--plum)}.mp-sc.r{color:var(--pine)}
+.mp-sep{font-family:'IBM Plex Mono',monospace;font-size:26px;color:var(--lo)}
+.mp-lbl{font-size:11px;color:var(--lo);text-transform:uppercase;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:1px}
+
+/* ── 관리자 화면 ── */
+#pg-admin{padding:0;flex-direction:column}
+.a-hdr{background:var(--plum);color:#fff;padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between}
+.a-hdr h1{font-family:'Black Han Sans',sans-serif;font-size:18px;letter-spacing:1px}
+.a-hdr .sub{font-size:11px;opacity:.7;font-family:'IBM Plex Mono',monospace;margin-top:2px}
+.a-body{flex:1;max-width:760px;width:100%;margin:0 auto;padding:24px 18px 60px}
+.a-card{background:var(--white);border:1px solid var(--border);border-radius:10px;
+  padding:22px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+
+/* score input (admin) */
+.a-sc-row{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:18px}
+.a-sc-in{width:80px;height:64px;text-align:center;font-family:'IBM Plex Mono',monospace;
+  font-size:34px;font-weight:700;background:var(--cream);border:2px solid var(--border-s);
+  border-radius:8px;color:var(--text);-moz-appearance:textfield}
+.a-sc-in::-webkit-inner-spin-button,.a-sc-in::-webkit-outer-spin-button{-webkit-appearance:none}
+.a-sc-in:focus{outline:none;border-color:var(--plum);box-shadow:0 0 0 3px var(--plum-lt)}
+.a-sc-lbl{font-size:11px;color:var(--lo);text-align:center;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:1px;text-transform:uppercase}
+.a-sc-sep{font-family:'IBM Plex Mono',monospace;font-size:32px;color:var(--lo)}
+
+/* table */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:11px;letter-spacing:1px;text-transform:uppercase;
+  font-family:'IBM Plex Mono',monospace;color:var(--lo);font-weight:600;
+  text-align:left;padding:8px 12px;border-bottom:2px solid var(--border)}
+.tbl td{padding:10px 12px;font-size:14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr.wrow{background:var(--amber-lt)}
+.tbl tr.wrow td{font-weight:700}
+.td-sc{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700}
+.td-sc .k{color:var(--plum)}.td-sc .r{color:var(--pine)}.td-sc .s{color:var(--lo)}
+.del{background:none;border:none;cursor:pointer;color:var(--lo);
+  font-size:16px;padding:4px 6px;transition:color .15s;line-height:1}
+.del:hover{color:#C0392B}
+.stats-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{padding:5px 12px;font-size:12px;background:var(--cream);border:1px solid var(--border);
+  border-radius:20px;display:flex;align-items:center;gap:5px}
+.chip strong{color:var(--plum)}
+.empty2{text-align:center;padding:36px;color:var(--lo)}
+.empty2 span{display:block;font-size:32px;margin-bottom:8px}
+
+/* lottery */
+.lottery-box{background:linear-gradient(135deg,var(--plum-lt),rgba(212,112,10,.05));
+  border:2px solid var(--plum);border-radius:12px;padding:24px;text-align:center;
+  margin-bottom:16px;position:relative;overflow:hidden}
+.lottery-box::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 100%,rgba(212,112,10,.07),transparent 70%);
+  pointer-events:none}
+.lottery-box h3{font-family:'Black Han Sans',sans-serif;font-size:20px;
+  letter-spacing:3px;color:var(--plum);margin-bottom:4px}
+.lottery-box p{font-size:13px;color:var(--mid);margin-bottom:18px}
+.drum{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;
+  min-height:56px;margin-bottom:20px}
+.ball{width:54px;height:54px;border-radius:50%;border:2px solid var(--border-s);
+  background:var(--white);display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;text-align:center;word-break:break-all;padding:3px;
+  line-height:1.2;color:var(--text);box-shadow:0 2px 6px rgba(0,0,0,.07);transition:all .3s}
+.ball.spin{animation:spin-b .12s linear infinite;
+  border-color:var(--plum);background:var(--plum-lt);color:var(--plum)}
+.ball.pick{background:var(--plum);border-color:var(--plum-d);color:#fff;
+  transform:scale(1.18);box-shadow:0 0 18px rgba(114,37,107,.5);
+  animation:glow .5s ease infinite alternate}
+.ball.out{opacity:.2}
+@keyframes spin-b{0%{transform:rotate(-6deg) scale(1.05)}50%{transform:rotate(6deg) scale(.95)}100%{transform:rotate(-6deg) scale(1.05)}}
+@keyframes glow{from{box-shadow:0 0 8px rgba(114,37,107,.4)}to{box-shadow:0 0 26px rgba(114,37,107,.8)}}
+.draw-row{display:flex;gap:10px;align-items:flex-end}
+.draw-row .field{flex:1;margin-bottom:0}
+.w-list{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.w-item{display:flex;align-items:center;gap:14px;padding:13px 18px;
+  background:linear-gradient(135deg,var(--plum-lt),rgba(212,112,10,.05));
+  border:1px solid var(--plum);border-radius:8px;animation:slide-in .4s ease both;opacity:0}
+@keyframes slide-in{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+.wi-rank{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;
+  color:var(--plum);width:28px;flex-shrink:0}
+.wi-name{font-family:'Black Han Sans',sans-serif;font-size:18px;color:var(--plum-d)}
+.wi-score{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mid);margin-top:2px}
+.wi-trophy{font-size:22px;margin-left:auto}
+
+/* confetti */
+.cf{position:fixed;top:-10px;pointer-events:none;z-index:999;
+  border-radius:2px;animation:cf-fall linear forwards}
+@keyframes cf-fall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+@media(max-width:400px){
+  .s-num{width:78px;height:78px;font-size:28px}
+  .sc{width:34px;height:34px;font-size:18px}
+  .setup-box{padding:24px 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════
+  PAGE 0 : 최초 설정 화면 (Firebase)
+════════════════════════════════════ -->
+<div id="pg-setup" class="page">
+  <div id="s-wrap" style="display:flex;align-items:center;justify-content:center;padding:24px 16px;min-height:100vh">
+    <div class="setup-box">
+      <div class="setup-logo">
+        <div class="em">🇰🇷⚽🇿🇦</div>
+        <h1>스코어 예측 추첨</h1>
+        <p>WORLD CUP 2026 · FIREBASE 설정</p>
+      </div>
+
+      <!-- 설정 가이드 -->
+      <div class="guide-box">
+        <h3>🔧 Firebase 설정 방법 (5분)</h3>
+
+        <div class="step">
+          <span class="sn">1</span>
+          <p><b>Firebase 접속</b><br>
+          <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> 에 접속하고
+          구글 계정으로 로그인합니다.</p>
+        </div>
+
+        <div class="step">
+          <span class="sn">2</span>
+          <p><b>새 프로젝트 만들기</b><br>
+          <code>프로젝트 추가</code> 클릭 → 이름 입력 (예: worldcup2026) → Google 애널리틱스는 <b>비활성화</b> 선택 → 프로젝트 만들기</p>
+        </div>
+
+        <div class="step">
+          <span class="sn">3</span>
+          <p><b>Realtime Database 만들기</b><br>
+          왼쪽 메뉴에서 <code>빌드</code> → <code>Realtime Database</code> 클릭<br>
+          → <code>데이터베이스 만들기</code> → 지역: <b>미국(기본값)</b> → <code>테스트 모드로 시작</code> 선택 → 완료<br>
+          <div class="img-hint">✅ 완료되면 화면 상단에 주소가 표시됩니다:<br>
+          <b>https://worldcup2026-xxxxx-default-rtdb.firebaseio.com</b><br>
+          → 이것이 <b>databaseURL</b>입니다. 복사해두세요.</div></p>
+        </div>
+
+        <div class="step">
+          <span class="sn">4</span>
+          <p><b>웹 앱 등록 → 설정 코드 복사</b><br>
+          왼쪽 상단 ⚙️(설정) → <code>프로젝트 설정</code> → 하단 <b>내 앱</b> 섹션<br>
+          → <code>&lt;/&gt;</code> (웹) 아이콘 클릭 → 앱 닉네임 입력 → 앱 등록<br>
+          <div class="img-hint">✅ 아래와 같은 코드 블록이 나옵니다:<br>
+          <code style="font-size:11px">const firebaseConfig = {<br>
+&nbsp;&nbsp;apiKey: "AIza...",<br>
+&nbsp;&nbsp;databaseURL: "https://...",<br>
+&nbsp;&nbsp;...<br>
+};</code><br><br>
+          이 코드 블록 전체를 드래그해서 복사하세요.</div></p>
+        </div>
+
+        <div class="step">
+          <span class="sn">5</span>
+          <p><b>아래 칸에 붙여넣기</b><br>
+          복사한 코드를 아래 입력창에 그대로 붙여넣고 <b>시작하기</b>를 누르면 자동으로 설정됩니다.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Firebase 설정 코드 붙여넣기</label>
+        <textarea id="cfg-paste"
+          style="width:100%;min-height:130px;padding:12px 14px;background:var(--cream);
+          border:1.5px solid var(--border-s);border-radius:8px;color:var(--text);
+          font-size:13px;font-family:'IBM Plex Mono',monospace;resize:vertical;
+          line-height:1.6;transition:all .2s"
+          placeholder="const firebaseConfig = {&#10;  apiKey: &quot;AIza...&quot;,&#10;  authDomain: &quot;...&quot;,&#10;  databaseURL: &quot;https://...firebaseio.com&quot;,&#10;  projectId: &quot;...&quot;,&#10;  ...&#10;};"
+          oninput="previewConfig(this.value)"
+          onfocus="this.style.borderColor='var(--plum)';this.style.boxShadow='0 0 0 3px var(--plum-lt)'"
+          onblur="this.style.borderColor='';this.style.boxShadow=''"></textarea>
+        <div id="cfg-preview" style="margin-top:8px;font-size:12px;color:var(--pine-d);
+          font-family:'IBM Plex Mono',monospace;display:none;
+          background:var(--pine-lt);border:1px solid rgba(16,87,66,.2);
+          border-radius:6px;padding:10px 12px;line-height:1.8"></div>
+      </div>
+
+      <button class="btn btn-plum" onclick="doSetup()">시작하기 →</button>
+      <p id="setup-err" class="err" style="display:block;margin-top:10px"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+  PAGE 1 : 참가자 입력 화면
+════════════════════════════════════ -->
+<div id="pg-part" class="page">
+  <!-- 헤더 -->
+  <header class="p-hdr">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="match-pill">
+        <div class="t k">🇰🇷 한국</div>
+        <div class="vs">VS</div>
+        <div class="t r">🇿🇦 남아공</div>
+      </div>
+      <div class="conn-row">
+        <span class="dot" id="p-dot"></span>
+        <span id="p-conn-txt" style="font-size:11px">연결 중</span>
+      </div>
+    </div>
+    <div class="count-chip">참가자 <strong id="p-cnt">0</strong>명</div>
+  </header>
+
+  <div class="p-body">
+    <!-- 타이틀 -->
+    <div style="text-align:center;margin-bottom:24px">
+      <h2 style="font-family:'Black Han Sans',sans-serif;font-size:clamp(20px,5vw,30px);
+                 color:var(--plum-d);letter-spacing:-.5px;margin-bottom:6px">스코어를 예측하세요!</h2>
+      <p style="font-size:13px;color:var(--mid)">맞추면 추첨을 통해 선물을 드립니다 🎁</p>
+    </div>
+
+    <!-- 스코어 입력 -->
+    <div class="score-grid">
+      <div class="score-team">
+        <div class="s-label k">🇰🇷 한국</div>
+        <div class="s-wrap">
+          <button class="sc k" onclick="adj('k',1)">＋</button>
+          <div class="s-num" id="k-disp">0</div>
+          <button class="sc k" onclick="adj('k',-1)">－</button>
+        </div>
+      </div>
+      <div class="vs-sep">:</div>
+      <div class="score-team">
+        <div class="s-label r">🇿🇦 남아공</div>
+        <div class="s-wrap">
+          <button class="sc r" onclick="adj('r',1)">＋</button>
+          <div class="s-num" id="r-disp">0</div>
+          <button class="sc r" onclick="adj('r',-1)">－</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 이름 입력 -->
+    <div class="name-wrap">
+      <label class="name-lbl" for="nm-in">이름 입력</label>
+      <input type="text" id="nm-in" class="name-in" placeholder="홍길동" maxlength="20"
+             onkeydown="if(event.key==='Enter') doSubmit()">
+    </div>
+    <p id="part-err" class="err"></p>
+    <button class="btn btn-plum" id="sub-btn" onclick="doSubmit()">예측 등록하기 ⚽</button>
+
+    <!-- 참가자 목록 -->
+    <div class="part-list-wrap">
+      <div class="part-list-title">지금까지 참가한 사람들</div>
+      <div class="part-list" id="part-list">
+        <div class="part-empty"><span>👥</span>아직 아무도 없어요. 첫 번째로 등록해보세요!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+  PAGE 2 : 등록 완료 화면
+════════════════════════════════════ -->
+<div id="pg-done" class="page">
+  <div class="done-card">
+    <div class="done-icon">🎉</div>
+    <h2>등록 완료!</h2>
+    <p>나의 예측이 등록됐습니다.<br>경기 결과를 기다려주세요! 🏆</p>
+    <div class="my-pick">
+      <div>
+        <div class="mp-lbl">한국</div>
+        <div class="mp-sc k" id="d-k">0</div>
+      </div>
+      <div class="mp-sep">:</div>
+      <div>
+        <div class="mp-sc r" id="d-r">0</div>
+        <div class="mp-lbl">남아공</div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--lo)">이름: <strong id="d-nm" style="color:var(--text)"></strong></p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+  PAGE 3 : 관리자 화면 (?admin)
+════════════════════════════════════ -->
+<div id="pg-admin" class="page">
+  <div class="a-hdr">
+    <div>
+      <h1>⚽ 관리자</h1>
+      <div class="sub">대한민국 vs 남아공 · 스코어 예측 추첨</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;opacity:.85">
+      <span class="dot" id="a-dot"></span>
+      <span id="a-conn-txt">연결 중</span>
+    </div>
+  </div>
+
+  <div class="a-body">
+
+    <!-- 참가자 현황 -->
+    <div class="a-card">
+      <div class="card-title">참가자 현황</div>
+      <div class="stats-row">
+        <div class="chip">총 참가자 <strong id="a-tot">0</strong>명</div>
+        <div class="chip" id="top-chip" style="display:none">최다 예측 <strong id="a-top">-</strong></div>
+      </div>
+      <div id="a-tbl"></div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn-ghost btn" onclick="exportCSV()">📥 CSV 다운로드</button>
+        <button class="btn-ghost btn" style="color:#C0392B;border-color:rgba(192,57,43,.3)"
+                onclick="if(confirm('전체 삭제?'))clearAll()">🗑 전체 삭제</button>
+      </div>
+    </div>
+
+    <!-- 결과 입력 -->
+    <div class="a-card">
+      <div class="card-title">실제 경기 결과</div>
+      <div class="a-sc-row">
+        <div style="text-align:center">
+          <div class="a-sc-lbl">🇰🇷 한국</div>
+          <input type="number" class="a-sc-in" id="act-k" min="0" max="20" value="0">
+        </div>
+        <div class="a-sc-sep">:</div>
+        <div style="text-align:center">
+          <input type="number" class="a-sc-in" id="act-r" min="0" max="20" value="0">
+          <div class="a-sc-lbl">🇿🇦 남아공</div>
+        </div>
+      </div>
+      <button class="btn btn-pine" onclick="findWinners()">정답자 확인하기 🔍</button>
+    </div>
+
+    <!-- 추첨 -->
+    <div class="a-card" id="lot-card" style="display:none">
+      <div class="card-title">자동 추첨</div>
+      <div id="win-notice"></div>
+      <div class="lottery-box">
+        <h3>🎰 LUCKY DRAW</h3>
+        <p id="drum-sub"></p>
+        <div class="drum" id="drum"></div>
+      </div>
+      <div class="draw-row" id="draw-row">
+        <div class="field" style="margin-bottom:0">
+          <label style="font-size:12px;font-weight:600;color:var(--mid);display:block;margin-bottom:6px">추첨 인원</label>
+          <input type="number" id="draw-n" class="name-in" min="1" value="1"
+                 style="font-size:18px;text-align:center;padding:12px">
+        </div>
+        <button class="btn btn-amber" id="draw-btn" onclick="startDraw()"
+                style="flex-shrink:0;width:auto;padding:14px 24px">추첨 🎲</button>
+      </div>
+      <div class="w-list" id="w-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════
+// 상태 변수
+// ═══════════════════════════════
+let db = null;
+let participants = {};
+let winners = [];
+let kScore = 0, rScore = 0;
+const IS_ADMIN = new URLSearchParams(location.search).has('admin');
+
+// ═══════════════════════════════
+// Firebase SDK 동적 로드 후 시작
+// ═══════════════════════════════
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('스크립트 로드 실패: ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+async function boot() {
+  try {
+    await loadScript('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
+    await loadScript('https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js');
+  } catch(e) {
+    // gstatic 실패 시 jsDelivr 폴백
+    try {
+      await loadScript('https://cdn.jsdelivr.net/npm/firebase@8.10.1/firebase-app.js');
+      await loadScript('https://cdn.jsdelivr.net/npm/firebase@8.10.1/firebase-database.js');
+    } catch(e2) {
+      document.getElementById('setup-err').textContent =
+        '❌ Firebase SDK 로드 실패. 인터넷 연결을 확인해주세요.';
+      document.getElementById('setup-err').style.display = 'block';
+      show('setup');
+      return;
+    }
+  }
+
+  const saved = getSaved();
+  if (saved) {
+    initFirebase(saved.db, saved.key);
+  } else {
+    show('setup');
+  }
+}
+
+window.addEventListener('DOMContentLoaded', boot);
+
+function getSaved() {
+  try {
+    const s = localStorage.getItem('wc_fb');
+    return s ? JSON.parse(s) : null;
+  } catch(e) { return null; }
+}
+
+function show(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.getElementById('pg-' + name).classList.add('on');
+}
+
+// ═══════════════════════════════
+// 설정 코드 파싱 & 미리보기
+// ═══════════════════════════════
+function parseFirebaseConfig(raw) {
+  if (!raw || !raw.trim()) return null;
+
+  // JSON 객체 리터럴 추출: { ... } 안에 있는 내용
+  const block = raw.match(/\{[\s\S]*?\}/);
+  if (!block) return null;
+
+  // key: "value" 쌍을 파싱 (따옴표 스타일 무관)
+  const pairs = {};
+  const re = /(\w+)\s*:\s*["'`]([^"'`]+)["'`]/g;
+  let m;
+  while ((m = re.exec(block[0])) !== null) {
+    pairs[m[1]] = m[2];
+  }
+
+  if (!pairs.apiKey || !pairs.databaseURL) return null;
+  return pairs;
+}
+
+function previewConfig(raw) {
+  const prev = document.getElementById('cfg-preview');
+  const errEl = document.getElementById('setup-err');
+  errEl.style.display = 'none'; errEl.textContent = '';
+
+  const cfg = parseFirebaseConfig(raw);
+  if (!cfg) { prev.style.display = 'none'; return; }
+
+  prev.style.display = 'block';
+  prev.innerHTML =
+    '✅ 인식됨<br>' +
+    (cfg.apiKey     ? '🔑 apiKey: ' + cfg.apiKey.slice(0,10) + '...<br>' : '') +
+    (cfg.databaseURL? '🗄 databaseURL: ' + cfg.databaseURL + '<br>'    : '') +
+    (cfg.projectId  ? '📁 projectId: '  + cfg.projectId               : '');
+}
+
+function doSetup() {
+  const raw    = document.getElementById('cfg-paste').value;
+  const errEl  = document.getElementById('setup-err');
+  errEl.style.display = 'none'; errEl.textContent = '';
+
+  if (!raw.trim()) {
+    errEl.textContent = '❌ Firebase 설정 코드를 붙여넣어 주세요.';
+    errEl.style.display = 'block'; return;
+  }
+
+  const cfg = parseFirebaseConfig(raw);
+
+  if (!cfg) {
+    errEl.textContent = '❌ 설정 코드를 인식하지 못했습니다. Firebase 콘솔에서 firebaseConfig 블록 전체를 복사해 붙여넣어 주세요.';
+    errEl.style.display = 'block'; return;
+  }
+  if (!cfg.databaseURL) {
+    errEl.textContent = '❌ databaseURL이 없습니다. Realtime Database를 먼저 만든 뒤 다시 시도해주세요.';
+    errEl.style.display = 'block'; return;
+  }
+
+  localStorage.setItem('wc_fb', JSON.stringify({ db: cfg.databaseURL, key: cfg.apiKey }));
+  initFirebase(cfg.databaseURL, cfg.apiKey);
+}
+
+// ═══════════════════════════════
+// Firebase 초기화
+// ═══════════════════════════════
+function initFirebase(dbUrl, apiKey) {
+  try {
+    // 이미 초기화됐으면 기존 앱 삭제 후 재시작
+    if (firebase.apps.length > 0) {
+      firebase.apps[0].delete().then(() => initFirebase(dbUrl, apiKey));
+      return;
+    }
+
+    firebase.initializeApp({
+      apiKey:      apiKey,
+      databaseURL: dbUrl,
+      projectId:   dbUrl.replace('https://','').split('.')[0].replace(/-default-rtdb$/,'')
+    });
+
+    db = firebase.database();
+
+    // 연결 상태 감지
+    db.ref('.info/connected').on('value', snap => {
+      const ok = !!snap.val();
+      setConn(ok);
+    });
+
+    // 참가자 실시간 구독
+    db.ref('participants').on('value', snap => {
+      participants = snap.val() || {};
+      renderParticipantList();
+      if (IS_ADMIN) renderAdminTable();
+    });
+
+    // 화면 전환
+    if (IS_ADMIN) show('admin');
+    else          show('part');
+
+  } catch(e) {
+    const errEl = document.getElementById('setup-err');
+    errEl.textContent = '❌ 연결 실패: ' + e.message;
+    errEl.style.display = 'block';
+    show('setup');
+  }
+}
+
+function setConn(ok) {
+  const cls = ok ? 'dot ok' : 'dot bad';
+  const txt = ok ? '실시간 연결됨' : '연결 오류';
+  const pd = document.getElementById('p-dot'), pt = document.getElementById('p-conn-txt');
+  const ad = document.getElementById('a-dot'),  at = document.getElementById('a-conn-txt');
+  if (pd) { pd.className = cls; pt.textContent = txt; }
+  if (ad) { ad.className = cls; at.textContent = txt; }
+}
+
+// ═══════════════════════════════
+// 참가자 화면
+// ═══════════════════════════════
+function adj(team, d) {
+  if (team === 'k') {
+    kScore = Math.max(0, Math.min(20, kScore + d));
+    document.getElementById('k-disp').textContent = kScore;
+  } else {
+    rScore = Math.max(0, Math.min(20, rScore + d));
+    document.getElementById('r-disp').textContent = rScore;
+  }
+}
+
+async function doSubmit() {
+  const name  = document.getElementById('nm-in').value.trim();
+  const errEl = document.getElementById('part-err');
+  errEl.style.display = 'none';
+
+  if (!name) { errEl.textContent = '이름을 입력해주세요.'; errEl.style.display = 'block'; return; }
+
+  // 중복 이름 체크
+  const dup = Object.values(participants).find(p => p.name === name);
+  if (dup) { errEl.textContent = '이미 같은 이름으로 등록됐습니다.'; errEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('sub-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="sp"></span>등록 중...';
+
+  try {
+    await db.ref('participants').push({ name, kor: kScore, rsa: rScore, ts: Date.now() });
+
+    // 완료 화면
+    document.getElementById('d-k').textContent  = kScore;
+    document.getElementById('d-r').textContent  = rScore;
+    document.getElementById('d-nm').textContent = name;
+    show('done');
+  } catch(e) {
+    errEl.textContent = '오류: ' + e.message + ' (Firebase 설정을 확인해주세요)';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '예측 등록하기 ⚽';
+  }
+}
+
+// 참가자 목록 렌더 (참가자 화면 하단)
+function renderParticipantList() {
+  const list = sortedList();
+  const cnt  = list.length;
+
+  // 헤더 카운트
+  const cEl = document.getElementById('p-cnt');
+  if (cEl) cEl.textContent = cnt;
+
+  const el = document.getElementById('part-list');
+  if (!el) return;
+
+  if (cnt === 0) {
+    el.innerHTML = '<div class="part-empty"><span>👥</span>아직 아무도 없어요. 첫 번째로 등록해보세요!</div>';
+    return;
+  }
+
+  el.innerHTML = list.map((p, i) => `
+    <div class="part-row">
+      <span class="pr-num">${i + 1}</span>
+      <span class="pr-name">${esc(p.name)}</span>
+      <span class="pr-score">
+        <span class="sk">${p.kor}</span>
+        <span class="ss"> : </span>
+        <span class="sr">${p.rsa}</span>
+      </span>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════
+// 관리자 화면
+// ═══════════════════════════════
+function renderAdminTable() {
+  const list = sortedList();
+  const totEl = document.getElementById('a-tot');
+  if (totEl) totEl.textContent = list.length;
+
+  if (!list.length) {
+    document.getElementById('a-tbl').innerHTML =
+      '<div class="empty2"><span>📋</span>아직 참가자가 없습니다.</div>';
+    document.getElementById('top-chip').style.display = 'none';
+    return;
+  }
+
+  // 최다 예측
+  const freq = {};
+  list.forEach(p => { const k=p.kor+':'+p.rsa; freq[k]=(freq[k]||0)+1; });
+  const top = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('a-top').textContent = top[0]+' ('+top[1]+'명)';
+  document.getElementById('top-chip').style.display = '';
+
+  const rows = list.map((p, i) => `
+    <tr>
+      <td style="color:var(--lo);font-family:'IBM Plex Mono',monospace;font-size:12px">${i+1}</td>
+      <td style="font-weight:600">${esc(p.name)}</td>
+      <td class="td-sc"><span class="k">${p.kor}</span><span class="s"> : </span><span class="r">${p.rsa}</span></td>
+      <td style="font-size:11px;color:var(--lo);font-family:'IBM Plex Mono',monospace">
+        ${new Date(p.ts).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}
+      </td>
+      <td><button class="del" onclick="delOne('${esc(p.id)}')">×</button></td>
+    </tr>`).join('');
+
+  document.getElementById('a-tbl').innerHTML = `
+    <table class="tbl">
+      <thead><tr><th>#</th><th>이름</th><th>예측</th><th>시각</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function delOne(id) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  db.ref('participants/' + id).remove();
+}
+
+function clearAll() {
+  db.ref('participants').remove();
+}
+
+function exportCSV() {
+  const list = sortedList();
+  if (!list.length) { alert('참가자가 없습니다.'); return; }
+  const rows = [['이름','한국','남아공','등록시각']].concat(
+    list.map(p => [p.name, p.kor, p.rsa, new Date(p.ts).toLocaleString('ko-KR')])
+  );
+  const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'}));
+  a.download = '월드컵예측.csv'; a.click();
+}
+
+// ═══════════════════════════════
+// 추첨
+// ═══════════════════════════════
+function findWinners() {
+  const aK = parseInt(document.getElementById('act-k').value)||0;
+  const aR = parseInt(document.getElementById('act-r').value)||0;
+  const list = sortedList();
+  if (!list.length) { alert('참가자가 없습니다!'); return; }
+
+  winners = list.filter(p => p.kor === aK && p.rsa === aR);
+  const card = document.getElementById('lot-card');
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const noticeEl = document.getElementById('win-notice');
+  const wc = winners.length;
+
+  document.getElementById('w-list').innerHTML = '';
+  document.getElementById('drum').innerHTML   = '';
+
+  if (wc === 0) {
+    noticeEl.innerHTML = `<div class="notice err">😢 <b>${aK}:${aR}</b>을 맞춘 참가자가 없습니다.</div>`;
+    document.getElementById('drum-sub').textContent = '';
+    document.getElementById('draw-row').style.display = 'none';
+  } else if (wc === 1) {
+    noticeEl.innerHTML = `<div class="notice info">🎉 정답자 <b>1명</b> — 단독 당첨!</div>`;
+    document.getElementById('drum-sub').textContent = winners[0].name + ' 님이 맞혔습니다!';
+    setupDrum();
+    document.getElementById('drum').querySelector('.ball')?.classList.add('pick');
+    document.getElementById('draw-row').style.display = 'none';
+    buildWinnerList([0]);
+    confetti(50);
+  } else {
+    noticeEl.innerHTML = `<div class="notice warn">🎯 <b>${wc}명</b>이 <b>${aK}:${aR}</b>을 맞혔습니다! 추첨하세요.</div>`;
+    document.getElementById('drum-sub').textContent = '정답자 ' + wc + '명 중 추첨합니다';
+    setupDrum();
+    const dn = document.getElementById('draw-n');
+    dn.max = wc;
+    dn.value = Math.min(parseInt(dn.value)||1, wc);
+    document.getElementById('draw-row').style.display = '';
+  }
+}
+
+function setupDrum() {
+  document.getElementById('drum').innerHTML =
+    winners.map((w,i) => `<div class="ball" id="b${i}">${esc(w.name)}</div>`).join('');
+}
+
+function startDraw() {
+  const n    = Math.min(parseInt(document.getElementById('draw-n').value)||1, winners.length);
+  const btn  = document.getElementById('draw-btn');
+  setupDrum();
+  document.getElementById('w-list').innerHTML = '';
+  btn.disabled = true; btn.textContent = '추첨 중 🎰';
+
+  const idx    = shuffle([...Array(winners.length).keys()]);
+  const picked = idx.slice(0, n), rest = idx.slice(n);
+
+  document.querySelectorAll('.ball').forEach(b => b.classList.add('spin'));
+  let t = 0;
+  const iv = setInterval(() => {
+    t += 80;
+    document.querySelectorAll('.ball').forEach(b =>
+      b.textContent = esc(winners[Math.floor(Math.random()*winners.length)].name));
+    if (t >= 2400) {
+      clearInterval(iv);
+      document.querySelectorAll('.ball').forEach((b, i) => {
+        b.classList.remove('spin');
+        b.textContent = esc(winners[i].name);
+      });
+      setTimeout(() => {
+        picked.forEach(i => document.getElementById('b'+i)?.classList.add('pick'));
+        rest.forEach(i => { const b=document.getElementById('b'+i); if(b) b.classList.add('out'); });
+        buildWinnerList(picked);
+        confetti(70);
+        btn.disabled = false; btn.textContent = '다시 추첨 🎲';
+      }, 150);
+    }
+  }, 80);
+}
+
+function buildWinnerList(indices) {
+  const el = document.getElementById('w-list');
+  el.innerHTML = '';
+  const tr = ['🥇','🥈','🥉','🎖️','🏅'];
+  indices.forEach((idx, rank) => {
+    setTimeout(() => {
+      const d = document.createElement('div');
+      d.className = 'w-item';
+      d.style.animationDelay = (rank * .13) + 's';
+      d.innerHTML = `
+        <div class="wi-rank">${rank+1}</div>
+        <div>
+          <div class="wi-name">${esc(winners[idx].name)}</div>
+          <div class="wi-score">예측: ${winners[idx].kor} : ${winners[idx].rsa}</div>
+        </div>
+        <div class="wi-trophy">${tr[rank]||'🎖️'}</div>`;
+      el.appendChild(d);
+    }, rank * 180);
+  });
+}
+
+// ═══════════════════════════════
+// 유틸
+// ═══════════════════════════════
+function sortedList() {
+  return Object.entries(participants)
+    .map(([id, p]) => ({ id, ...p }))
+    .sort((a, b) => a.ts - b.ts);
+}
+
+function shuffle(arr) {
+  for (let i=arr.length-1; i>0; i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function confetti(n) {
+  const cols = ['#72256B','#D4700A','#105742','#5a1a54','#6CA07A','#0A7A8F'];
+  for (let i=0; i<n; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'cf';
+      el.style.cssText = `left:${Math.random()*100}vw;width:${6+Math.random()*7}px;height:${6+Math.random()*7}px;background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${1.4+Math.random()*1.8}s`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }, i * 14);
+  }
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.querySelectorAll('.a-sc-in').forEach(el => {
+  el.addEventListener('input', () => {
+    let v = parseInt(el.value);
+    if (isNaN(v)||v<0) el.value=0;
+    if (v>20) el.value=20;
+  });
+  el.addEventListener('focus', () => el.select());
+});
+</script>
+</body>
+</html>
